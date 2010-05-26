@@ -33,9 +33,13 @@ DEB_DIR = $(BUILD_ROOT)/deb
 BUILD_DEBUG_DIR = $(BUILD_ROOT)/debug
 BUILD_RELEASE_DIR = $(BUILD_ROOT)/release
 
-INSTALL_BIN_DIR = /usr/local/bin
-INSTALL_LIB_DIR = /usr/local/lib
-INSTALL_INCLUDE_DIR = /usr/local/include/
+ifeq ($(PREFIX),)
+	PREFIX=/tmp
+endif
+
+INSTALL_BIN_DIR = $(PREFIX)/bin
+INSTALL_LIB_DIR = $(PREFIX)/lib
+INSTALL_INCLUDE_DIR = $(PREFIX)/include/
 
 
 ##############################################################################
