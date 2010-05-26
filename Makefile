@@ -182,7 +182,7 @@ PYTHONLIB = \
 	$(BIN_DIR)/$(PYTHON_DIR)/$(PYTHON_LIB)
 
 $(SRC_DIR)/$(PYTHON_CLIENT_WRAPPER).cpp: $(CLIENT_WRAPPER_FILES)
-	-swig -python -c++ -outdir $(SRC_DIR)/$(CLIENT_DIR) -o $@ -I$(SRC_DIR)/$(PYTHON_CLIENT_DIR) $(SRC_DIR)/$(CLIENT_DIR)/keyspace_client.i
+	-swig -python -c++ -outdir $(SRC_DIR)/$(PYTHON_CLIENT_DIR) -o $@ -I$(SRC_DIR)/$(PYTHON_CLIENT_DIR) $(SRC_DIR)/$(CLIENT_DIR)/keyspace_client.i
 
 $(BUILD_DIR)/$(PYTHON_CLIENT_WRAPPER).o: $(BUILD_DIR) $(SRC_DIR)/$(PYTHON_CLIENT_WRAPPER).cpp
 	$(CXX) $(CXXFLAGS) `$(PYTHON_CONFIG) --includes` -o $@ -c $(SRC_DIR)/$(PYTHON_CLIENT_WRAPPER).cpp
@@ -195,7 +195,10 @@ $(BIN_DIR)/$(PYTHON_DIR)/$(PYTHON_LIB): $(BIN_DIR)/$(ALIB) $(SWIG_WRAPPER_OBJECT
 
 # java wrapper
 JAVA_DIR = java
+JAVA_PACKAGE_DIR = com/scalien/keyspace
+JAVA_PACKAGE = com.scalien.keyspace
 JAVA_LIB = libkeyspace_client.$(SOEXT)
+JAVA_JAR_FILE = keyspace.jar
 JAVA_INCLUDE = 
 
 JAVA_CLIENT_DIR = \
@@ -205,10 +208,10 @@ JAVA_CLIENT_WRAPPER = \
 	$(JAVA_CLIENT_DIR)/keyspace_client_java
 
 JAVALIB = \
-	$(BIN_DIR)/$(JAVA_DIR)/$(JAVA_LIB)
+	$(BIN_DIR)/$(JAVA_DIR)/$(JAVA_JAR_FILE) $(BIN_DIR)/$(JAVA_DIR)/$(JAVA_LIB)
 
 $(SRC_DIR)/$(JAVA_CLIENT_WRAPPER).cpp: $(CLIENT_WRAPPER_FILES)
-	-swig -java -c++ -outdir $(SRC_DIR)/$(CLIENT_DIR) -o $@ -I$(SRC_DIR)/$(JAVA_CLIENT_DIR) $(SRC_DIR)/$(CLIENT_DIR)/keyspace_client.i
+	-swig -java -c++ -package $(JAVA_PACKAGE) -outdir $(SRC_DIR)/$(JAVA_CLIENT_DIR) -o $@ -I$(SRC_DIR)/$(JAVA_CLIENT_DIR) $(SRC_DIR)/$(CLIENT_DIR)/keyspace_client.i
 
 $(BUILD_DIR)/$(JAVA_CLIENT_WRAPPER).o: $(BUILD_DIR) $(SRC_DIR)/$(JAVA_CLIENT_WRAPPER).cpp
 	$(CXX) $(CXXFLAGS) $(JAVA_INCLUDE) -o $@ -c $(SRC_DIR)/$(JAVA_CLIENT_WRAPPER).cpp
@@ -216,7 +219,76 @@ $(BUILD_DIR)/$(JAVA_CLIENT_WRAPPER).o: $(BUILD_DIR) $(SRC_DIR)/$(JAVA_CLIENT_WRA
 $(BIN_DIR)/$(JAVA_DIR)/$(JAVA_LIB): $(BIN_DIR)/$(ALIB) $(SWIG_WRAPPER_OBJECT) $(BUILD_DIR)/$(JAVA_CLIENT_WRAPPER).o
 	-mkdir -p $(BIN_DIR)/$(JAVA_DIR)
 	$(CXX) $(SWIG_LDFLAGS) -o $@ $(BUILD_DIR)/$(JAVA_CLIENT_WRAPPER).o $(SWIG_WRAPPER_OBJECT) $(BIN_DIR)/$(ALIB)
+
+$(BIN_DIR)/$(JAVA_DIR)/$(JAVA_JAR_FILE): $(SRC_DIR)/$(JAVA_CLIENT_WRAPPER).cpp
+	-mkdir -p $(BIN_DIR)/$(JAVA_DIR)/$(JAVA_PACKAGE_DIR)
+	-cp -rf $(SRC_DIR)/$(JAVA_CLIENT_DIR)/*.java $(BIN_DIR)/$(JAVA_DIR)/$(JAVA_PACKAGE_DIR)
+	-cd $(BIN_DIR)/$(JAVA_DIR) && javac $(JAVA_PACKAGE_DIR)/Client.java && jar cf $(JAVA_JAR_FILE) $(JAVA_PACKAGE_DIR)/*.class && rm -rf com
 	
+
+# php wrapper
+PHP_DIR = php
+PHP_LIB = keyspace_client.so
+PHP_INCLUDE = 
+PHP_CONFIG = php-config
+
+PHP_CLIENT_DIR = $(CLIENT_DIR)/PHP
+PHP_CLIENT_WRAPPER = $(PHP_CLIENT_DIR)/keyspace_client_php
+PHPLIB = $(BIN_DIR)/$(PHP_DIR)/$(PHP_LIB)
+
+$(SRC_DIR)/$(PHP_CLIENT_WRAPPER).cpp: $(CLIENT_WRAPPER_FILES)
+	-swig -php5 -c++  -outdir $(SRC_DIR)/$(PHP_CLIENT_DIR) -o $@ -I$(SRC_DIR)/$(PHP_CLIENT_DIR) $(SRC_DIR)/$(CLIENT_DIR)/keyspace_client.i
+	-script/fix_swig_php.sh $(SRC_DIR)/$(PHP_CLIENT_DIR)
+
+$(BUILD_DIR)/$(PHP_CLIENT_WRAPPER).o: $(BUILD_DIR) $(SRC_DIR)/$(PHP_CLIENT_WRAPPER).cpp
+	$(CXX) $(CXXFLAGS) $(PHP_INCLUDE) `$(PHP_CONFIG) --includes` -I$(SRC_DIR)/$(PHP_CLIENT_DIR) -o $@ -c $(SRC_DIR)/$(PHP_CLIENT_WRAPPER).cpp
+
+$(BIN_DIR)/$(PHP_DIR)/$(PHP_LIB): $(BIN_DIR)/$(ALIB) $(SWIG_WRAPPER_OBJECT) $(BUILD_DIR)/$(PHP_CLIENT_WRAPPER).o
+	-mkdir -p $(BIN_DIR)/$(PHP_DIR)
+	$(CXX) $(SWIG_LDFLAGS) -o $@ $(BUILD_DIR)/$(PHP_CLIENT_WRAPPER).o $(SWIG_WRAPPER_OBJECT) $(BIN_DIR)/$(ALIB)
+	-cp -rf $(SRC_DIR)/$(PHP_CLIENT_DIR)/keyspace.php $(BIN_DIR)/$(PHP_DIR)
+	-cp -rf $(SRC_DIR)/$(PHP_CLIENT_DIR)/keyspace_client.php $(BIN_DIR)/$(PHP_DIR)
+
+# ruby wrapper
+RUBY_DIR = ruby
+RUBY_LIB = keyspace_client.$(BUNDLEEXT)
+RUBY_INCLUDE = -I/System/Library/Frameworks/Ruby.framework/Versions/1.8/Headers/ -I/usr/include/ruby-1.9.0/ruby/ruby.h
+
+RUBY_CLIENT_DIR = $(CLIENT_DIR)/Ruby
+RUBY_CLIENT_WRAPPER = $(RUBY_CLIENT_DIR)/keyspace_client_ruby
+RUBYLIB = $(BIN_DIR)/$(RUBY_DIR)/$(RUBY_LIB)
+
+$(SRC_DIR)/$(RUBY_CLIENT_WRAPPER).cpp: $(CLIENT_WRAPPER_FILES)
+	-swig -ruby -c++  -outdir $(SRC_DIR)/$(RUBY_CLIENT_DIR) -o $@ -I$(SRC_DIR)/$(RUBY_CLIENT_DIR) $(SRC_DIR)/$(CLIENT_DIR)/keyspace_client.i
+
+$(BUILD_DIR)/$(RUBY_CLIENT_WRAPPER).o: $(BUILD_DIR) $(SRC_DIR)/$(RUBY_CLIENT_WRAPPER).cpp
+	$(CXX) $(CXXFLAGS) $(RUBY_INCLUDE) -I$(SRC_DIR)/$(RUBY_CLIENT_DIR) -o $@ -c $(SRC_DIR)/$(RUBY_CLIENT_WRAPPER).cpp
+
+$(BIN_DIR)/$(RUBY_DIR)/$(RUBY_LIB): $(BIN_DIR)/$(ALIB) $(SWIG_WRAPPER_OBJECT) $(BUILD_DIR)/$(RUBY_CLIENT_WRAPPER).o
+	-mkdir -p $(BIN_DIR)/$(RUBY_DIR)
+	$(CXX) $(SWIG_LDFLAGS) -o $@ $(BUILD_DIR)/$(RUBY_CLIENT_WRAPPER).o $(SWIG_WRAPPER_OBJECT) $(BIN_DIR)/$(ALIB)
+	-cp -rf $(SRC_DIR)/$(RUBY_CLIENT_DIR)/keyspace.rb $(BIN_DIR)/$(RUBY_DIR)
+
+# perl wrapper
+PERL_DIR = perl
+PERL_LIB = keyspace_client.$(BUNDLEEXT)
+PERL_INCLUDE = -I/opt/local/lib/perl5/5.8.9/darwin-2level/CORE/ -I/usr/lib/perl/5.10/CORE/
+
+PERL_CLIENT_DIR = $(CLIENT_DIR)/Perl
+PERL_CLIENT_WRAPPER = $(PERL_CLIENT_DIR)/keyspace_client_perl
+PERLLIB = $(BIN_DIR)/$(PERL_DIR)/$(PERL_LIB)
+
+$(SRC_DIR)/$(PERL_CLIENT_WRAPPER).cpp: $(CLIENT_WRAPPER_FILES)
+	-swig -perl -c++  -outdir $(SRC_DIR)/$(PERL_CLIENT_DIR) -o $@ -I$(SRC_DIR)/$(PERL_CLIENT_DIR) $(SRC_DIR)/$(CLIENT_DIR)/keyspace_client.i
+
+$(BUILD_DIR)/$(PERL_CLIENT_WRAPPER).o: $(BUILD_DIR) $(SRC_DIR)/$(PERL_CLIENT_WRAPPER).cpp
+	$(CXX) $(CXXFLAGS) $(PERL_INCLUDE) -I$(SRC_DIR)/$(PERL_CLIENT_DIR) -o $@ -c $(SRC_DIR)/$(PERL_CLIENT_WRAPPER).cpp
+
+$(BIN_DIR)/$(PERL_DIR)/$(PERL_LIB): $(BIN_DIR)/$(ALIB) $(SWIG_WRAPPER_OBJECT) $(BUILD_DIR)/$(PERL_CLIENT_WRAPPER).o
+	-mkdir -p $(BIN_DIR)/$(PERL_DIR)
+	$(CXX) $(SWIG_LDFLAGS) -o $@ $(BUILD_DIR)/$(PERL_CLIENT_WRAPPER).o $(SWIG_WRAPPER_OBJECT) $(BIN_DIR)/$(ALIB)
+	-cp -rf $(SRC_DIR)/$(PERL_CLIENT_DIR)/keyspace.pm $(BIN_DIR)/$(PERL_DIR)
+	-cp -rf $(SRC_DIR)/$(PERL_CLIENT_DIR)/keyspace_client.pm $(BIN_DIR)/$(PERL_DIR)
 
 # executables	
 $(BIN_DIR)/keyspaced: $(BUILD_DIR) $(LIBS) $(OBJECTS)
@@ -249,6 +321,12 @@ clientlib:
 pythonlib: $(BUILD_DIR) $(CLIENTLIBS) $(PYTHONLIB)
 
 javalib: $(BUILD_DIR) $(CLIENTLIBS) $(JAVALIB)
+
+phplib: $(BUILD_DIR) $(CLIENTLIBS) $(PHPLIB)
+
+rubylib: $(BUILD_DIR) $(CLIENTLIBS) $(RUBYLIB)
+
+perllib: $(BUILD_DIR) $(CLIENTLIBS) $(PERLLIB)
 
 targets: $(BUILD_DIR) executables clientlibs
 
@@ -291,9 +369,44 @@ clean-release:
 	-rm -f $(BASE_DIR)/keyspace
 	-rm -r -f $(BUILD_RELEASE_DIR)
 	
-clean-libs:
+clean-libs: clean-pythonlib clean-phplib clean-javalib clean-rubylib clean-perllib
 	-rm $(CLIENTLIBS)
+
+clean-pythonlib:
 	-rm $(BIN_DIR)/$(PYTHON_DIR)/*
+
+clean-javalib:
+	-rm $(BUILD_DIR)/$(JAVA_CLIENT_DIR)/*
+	-rm -rf $(BIN_DIR)/$(JAVA_DIR)/*
+
+clean-phplib:
+	-rm $(BUILD_DIR)/$(PHP_CLIENT_DIR)/*
+	-rm $(BIN_DIR)/$(PHP_DIR)/*
+
+clean-rubylib:
+	-rm $(BUILD_DIR)/$(RUBY_CLIENT_DIR)/*
+	-rm $(BIN_DIR)/$(RUBY_DIR)/*
+
+clean-perllib:
+	-rm $(BUILD_DIR)/$(PERL_CLIENT_DIR)/*
+	-rm $(BIN_DIR)/$(PERL_DIR)/*
+
+clean-pythonlib-swig:
+	-rm $(SRC_DIR)/$(PYTHON_CLIENT_WRAPPER).cpp
+	
+clean-javalib-swig:
+	-rm $(SRC_DIR)/$(JAVA_CLIENT_WRAPPER).cpp
+
+clean-phplib-swig:
+	-rm $(SRC_DIR)/$(PHP_CLIENT_WRAPPER).cpp
+
+clean-rubylib-swig:
+	-rm $(SRC_DIR)/$(RUBY_CLIENT_WRAPPER).cpp
+
+clean-perllib-swig:
+	-rm $(SRC_DIR)/$(PERL_CLIENT_WRAPPER).cpp
+
+clean-swig: clean-pythonlib-swig clean-javalib-swig clean-phplib-swig clean-rubylib-swig clean-perllib-swig
 
 clean-executables:
 	-rm $(EXECUTABLES)

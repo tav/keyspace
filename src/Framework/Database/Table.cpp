@@ -13,7 +13,12 @@ database(database)
 	const char *dbname = NULL;
 	DBTYPE type = DB_BTREE;
 	u_int32_t flags = DB_CREATE | DB_AUTO_COMMIT |
-	DB_NOMMAP | DB_READ_UNCOMMITTED;
+	DB_NOMMAP 
+#ifdef DB_READ_UNCOMMITTED
+	| DB_READ_UNCOMMITTED
+#endif
+	;
+
 	int mode = 0;
 	
 	db = new Db(database->env, 0);
@@ -101,7 +106,10 @@ bool Table::Get(Transaction* tx,
 	dbtValue.set_ulen(value.size);
 	
 	ret = db->get(txn, &dbtKey, &dbtValue, 0);
-	if (ret == DB_KEYEMPTY || ret == DB_NOTFOUND)
+
+	// DB_PAGE_NOTFOUND can occur with parallel PRUNE and GET operations
+	// probably because we have DB_READ_UNCOMMITED turned on
+	if (ret == DB_KEYEMPTY || ret == DB_NOTFOUND || ret == DB_PAGE_NOTFOUND)
 		return false;
 	
 	if (dbtValue.get_size() > (size_t) value.size)

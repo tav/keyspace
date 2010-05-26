@@ -1,5 +1,6 @@
 $(BUILD_DIR):
 	-mkdir -p $(BUILD_DIR) \
+		$(BIN_DIR) \
 		$(BUILD_DIR)/Application/ \
 		$(BUILD_DIR)/Application/Console/ \
 		$(BUILD_DIR)/Application/EchoServer/ \
@@ -9,7 +10,10 @@ $(BUILD_DIR):
 		$(BUILD_DIR)/Application/Keyspace/Catchup \
 		$(BUILD_DIR)/Application/Keyspace/Client/ \
 		$(BUILD_DIR)/Application/Keyspace/Client/Java \
+		$(BUILD_DIR)/Application/Keyspace/Client/Perl \
+		$(BUILD_DIR)/Application/Keyspace/Client/PHP \
 		$(BUILD_DIR)/Application/Keyspace/Client/Python \
+		$(BUILD_DIR)/Application/Keyspace/Client/Ruby \
 		$(BUILD_DIR)/Application/Keyspace/Database/ \
 		$(BUILD_DIR)/Application/Keyspace/Protocol/ \
 		$(BUILD_DIR)/Application/Keyspace/Protocol/HTTP \
